@@ -13,6 +13,8 @@ public class Emprestimo {
     private String usuarioNome;
     private String livroTitulo;
 
+    private LocalDate dataLimite;
+
     public String getUsuarioNome() {
         return usuarioNome;
     }
@@ -47,6 +49,21 @@ public class Emprestimo {
         this.usuarioId = usuarioId;
         this.livroId = livroId;
         this.dataEmprestimo = dataEmprestimo;
+        this.dataDevolucao = dataDevolucao;
+        this.status = status;
+    }
+
+    public Emprestimo(int id, int usuarioId, int livroId,
+                      LocalDate dataEmprestimo,
+                      LocalDate dataLimite,
+                      LocalDate dataDevolucao,
+                      String status) {
+
+        this.id = id;
+        this.usuarioId = usuarioId;
+        this.livroId = livroId;
+        this.dataEmprestimo = dataEmprestimo;
+        this.dataLimite = dataLimite;
         this.dataDevolucao = dataDevolucao;
         this.status = status;
     }
@@ -98,4 +115,14 @@ public class Emprestimo {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public LocalDate getDataLimite() {
+        return dataLimite;
+    }
+
+    public void setDataLimite(LocalDate dataLimite) {
+        this.dataLimite = dataLimite;
+    }
+
 }
+

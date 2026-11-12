@@ -23,10 +23,10 @@ public class EmprestimoDAO {
                 """;
 
         String inserirEmprestimo = """
-                INSERT INTO emprestimo
-                (usuario_id, livro_id, data_emprestimo, status)
-                VALUES (?, ?, ?, 'ATIVO')
-                """;
+            INSERT INTO emprestimo
+            (usuario_id, livro_id, data_emprestimo, data_limite, status)
+            VALUES (?, ?, ?, ?, 'ATIVO')
+            """;
 
         try (Connection conexao = Conexao.conectar()) {
 
@@ -58,6 +58,11 @@ public class EmprestimoDAO {
                             Date.valueOf(emprestimo.getDataEmprestimo())
                     );
 
+                    stmt.setDate(
+                            4,
+                            Date.valueOf(emprestimo.getDataLimite())
+                    );
+
                     stmt.executeUpdate();
                 }
 
@@ -78,19 +83,20 @@ public class EmprestimoDAO {
         List<Emprestimo> lista = new ArrayList<>();
 
         String sql = """
-        SELECT
-            e.id,
-            e.usuario_id,
-            e.livro_id,
-            e.data_emprestimo,
-            e.data_devolucao,
-            e.status,
-            u.nome AS usuario_nome,
-            l.titulo AS livro_titulo
-        FROM emprestimo e
-        JOIN usuario u ON e.usuario_id = u.id
-        JOIN livro l ON e.livro_id = l.id
-        ORDER BY e.id
+            SELECT
+                e.id,
+                e.usuario_id,
+                e.livro_id,
+                e.data_emprestimo,
+                e.data_limite,
+                e.data_devolucao,
+                e.status,
+                u.nome AS usuario_nome,
+                l.titulo AS livro_titulo
+            FROM emprestimo e
+            JOIN usuario u ON e.usuario_id = u.id
+            JOIN livro l ON e.livro_id = l.id
+            ORDER BY e.id
         """;
 
         try (Connection conn = Conexao.conectar();
@@ -103,6 +109,7 @@ public class EmprestimoDAO {
                         rs.getInt("usuario_id"),
                         rs.getInt("livro_id"),
                         rs.getDate("data_emprestimo").toLocalDate(),
+                        rs.getDate("data_limite").toLocalDate(),
                         rs.getDate("data_devolucao") != null
                                 ? rs.getDate("data_devolucao").toLocalDate()
                                 : null,
@@ -198,5 +205,31 @@ public class EmprestimoDAO {
                 conexao.setAutoCommit(true);
             }
         }
+    }
+
+    // Verifica se existe algum empréstimo associado ao livro
+    public boolean existeEmprestimoParaLivro(int livroId) throws SQLException {
+
+        String sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM emprestimo
+                WHERE livro_id = ?
+            )
+            """;
+
+        try (Connection conn = Conexao.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, livroId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean(1);
+                }
+            }
+        }
+
+        return false;
     }
 }

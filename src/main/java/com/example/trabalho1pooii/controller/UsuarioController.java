@@ -1,6 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.dao.UsuarioDAO;
+import com.example.trabalho1pooii.service.UsuarioService;
 import com.example.trabalho1pooii.model.Usuario;
 
 import javafx.collections.FXCollections;
@@ -29,7 +29,7 @@ public class UsuarioController {
 
     @FXML private TableView<Usuario> tabelaUsuarios;
 
-    private final UsuarioDAO usuarioDAO = new UsuarioDAO();
+    private final UsuarioService usuarioService = new UsuarioService();
 
     private final ObservableList<Usuario> usuarios =
             FXCollections.observableArrayList();
@@ -82,7 +82,7 @@ public class UsuarioController {
 
     private void carregarUsuarios() {
         try {
-            usuarios.setAll(usuarioDAO.listar());
+            usuarios.setAll(usuarioService.listar());
         } catch (SQLException e) {
             mostrarAlerta(Alert.AlertType.ERROR,
                     "Erro",
@@ -96,7 +96,7 @@ public class UsuarioController {
         try {
             Usuario usuario = lerFormulario();
 
-            usuarioDAO.inserir(usuario);
+            usuarioService.cadastrar(usuario);
             carregarUsuarios();
             limparCampos();
 
@@ -129,12 +129,16 @@ public class UsuarioController {
         try {
             Usuario dados = lerFormulario();
 
-            selecionado.setNome(dados.getNome());
-            selecionado.setCpf(dados.getCpf());
-            selecionado.setEmail(dados.getEmail());
-            selecionado.setTelefone(dados.getTelefone());
+            Usuario usuario = new Usuario(
+                    selecionado.getId(),
+                    dados.getNome(),
+                    dados.getCpf(),
+                    dados.getEmail(),
+                    dados.getTelefone()
+            );
 
-            usuarioDAO.atualizar(selecionado);
+            usuarioService.atualizar(usuario);
+            usuarioService.atualizar(selecionado);
             carregarUsuarios();
             limparCampos();
             tabelaUsuarios.getSelectionModel().clearSelection();
@@ -164,7 +168,7 @@ public class UsuarioController {
         }
 
         try {
-            usuarioDAO.excluir(selecionado.getId());
+            usuarioService.excluir(selecionado.getId());
             carregarUsuarios();
             limparCampos();
 
@@ -186,26 +190,12 @@ public class UsuarioController {
         tabelaUsuarios.getSelectionModel().clearSelection();
     }
 
+    //Modificada, Após o uso do Service Layer
     private Usuario lerFormulario() {
         String nome = txtNome.getText().trim();
         String cpf = txtCpf.getText().trim();
         String email = txtEmail.getText().trim();
         String telefone = txtTelefone.getText().trim();
-
-        if (nome.isEmpty() || cpf.isEmpty() || email.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Preencha nome, CPF e e-mail.");
-        }
-
-        if (!cpf.matches("\\d{11}")) {
-            throw new IllegalArgumentException(
-                    "O CPF deve conter exatamente 11 números.");
-        }
-
-        if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new IllegalArgumentException(
-                    "Informe um e-mail válido.");
-        }
 
         return new Usuario(nome, cpf, email, telefone);
     }

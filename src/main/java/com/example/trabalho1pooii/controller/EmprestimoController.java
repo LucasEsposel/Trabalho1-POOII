@@ -1,8 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.dao.EmprestimoDAO;
-import com.example.trabalho1pooii.dao.LivroDAO;
-import com.example.trabalho1pooii.dao.UsuarioDAO;
+import com.example.trabalho1pooii.service.EmprestimoService;
 import com.example.trabalho1pooii.model.Emprestimo;
 import com.example.trabalho1pooii.model.Livro;
 import com.example.trabalho1pooii.model.Usuario;
@@ -17,6 +15,16 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.StringConverter;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import com.example.trabalho1pooii.service.strategy.PoliticaPrazo;
+import com.example.trabalho1pooii.service.strategy.PrazoPadrao;
+import com.example.trabalho1pooii.service.strategy.PrazoEstendido;
+import com.example.trabalho1pooii.factory.AlertaFactory;
+import com.example.trabalho1pooii.factory.AlertaSucessoFactory;
+import com.example.trabalho1pooii.factory.AlertaErroFactory;
+import com.example.trabalho1pooii.factory.AlertaAvisoFactory;
+import com.example.trabalho1pooii.observer.EstoqueNotificador;
+import com.example.trabalho1pooii.observer.EstoqueObserver;
+import com.example.trabalho1pooii.observer.AlertaEstoqueObserver;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -29,19 +37,33 @@ public class EmprestimoController {
     @FXML private ComboBox<Usuario> comboUsuario;
     @FXML private ComboBox<Livro> comboLivro;
     @FXML private TableView<Emprestimo> tabelaEmprestimos;
+    @FXML private ComboBox<PoliticaPrazo> comboPrazo;
 
-    private final EmprestimoDAO emprestimoDAO = new EmprestimoDAO();
-    private final UsuarioDAO usuarioDAO = new UsuarioDAO();
-    private final LivroDAO livroDAO = new LivroDAO();
+
+    private final EmprestimoService emprestimoService = new EmprestimoService();
+
+    private final EstoqueNotificador estoqueNotificador = new EstoqueNotificador();
+    private final EstoqueObserver alertaEstoqueObserver = new AlertaEstoqueObserver();
 
     private final ObservableList<Emprestimo> emprestimos =
             FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
+
+        comboPrazo.setItems(FXCollections.observableArrayList(
+                new PrazoPadrao(),
+                new PrazoEstendido()
+        ));
+
         configurarComboBoxes();
+
+        comboPrazo.getSelectionModel().selectFirst();
+
         configurarTabela();
         carregarDados();
+
+        estoqueNotificador.adicionarObservador(alertaEstoqueObserver);
     }
 
     private void configurarComboBoxes() {
@@ -71,6 +93,27 @@ public class EmprestimoController {
                 return null;
             }
         });
+
+        comboPrazo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(PoliticaPrazo politica) {
+                if (politica instanceof PrazoPadrao) {
+                    return "Prazo padrão (7 dias)";
+                }
+
+                if (politica instanceof PrazoEstendido) {
+                    return "Prazo estendido (15 dias)";
+                }
+
+                return "";
+            }
+
+            @Override
+            public PoliticaPrazo fromString(String string) {
+                return null;
+            }
+        });
+
     }
 
     private void configurarTabela() {
@@ -96,6 +139,12 @@ public class EmprestimoController {
         colDataEmprestimo.setCellValueFactory(
                 new PropertyValueFactory<>("dataEmprestimo"));
 
+        TableColumn<Emprestimo, LocalDate> colDataLimite =
+                new TableColumn<>("Data Limite");
+
+        colDataLimite.setCellValueFactory(
+                new PropertyValueFactory<>("dataLimite"));
+
         TableColumn<Emprestimo, LocalDate> colDataDevolucao =
                 new TableColumn<>("Data da Devolução");
         colDataDevolucao.setCellValueFactory(
@@ -111,6 +160,7 @@ public class EmprestimoController {
                 colUsuario,
                 colLivro,
                 colDataEmprestimo,
+                colDataLimite,
                 colDataDevolucao,
                 colStatus
         );
@@ -121,17 +171,27 @@ public class EmprestimoController {
     private void carregarDados() {
         try {
             comboUsuario.setItems(
-                    FXCollections.observableArrayList(usuarioDAO.listar()));
+                    FXCollections.observableArrayList(
+                            emprestimoService.listarUsuarios()
+                    )
+            );
 
             comboLivro.setItems(
-                    FXCollections.observableArrayList(livroDAO.listar()));
+                    FXCollections.observableArrayList(
+                            emprestimoService.listarLivros()
+                    )
+            );
 
-            emprestimos.setAll(emprestimoDAO.listar());
+            emprestimos.setAll(
+                    emprestimoService.listarEmprestimos()
+            );
 
         } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR,
+            mostrarAlerta(
+                    Alert.AlertType.ERROR,
                     "Erro ao carregar dados",
-                    e.getMessage());
+                    e.getMessage()
+            );
         }
     }
 
@@ -154,9 +214,23 @@ public class EmprestimoController {
                     LocalDate.now()
             );
 
-            emprestimoDAO.inserir(emprestimo);
+            PoliticaPrazo politica = comboPrazo.getValue();
+
+            if (politica == null) {
+                mostrarAlerta(Alert.AlertType.WARNING,
+                        "Atenção",
+                        "Selecione um prazo de devolução.");
+                return;
+            }
+
+            int livroId = livro.getId();
+
+            emprestimoService.emprestar(emprestimo, politica);
 
             carregarDados();
+
+            notificarEstoqueAlterado(livroId);
+
             comboUsuario.getSelectionModel().clearSelection();
             comboLivro.getSelectionModel().clearSelection();
 
@@ -164,10 +238,18 @@ public class EmprestimoController {
                     "Sucesso",
                     "Empréstimo registrado com sucesso!");
 
+        } catch (IllegalArgumentException e) {
+        mostrarAlerta(
+                Alert.AlertType.WARNING,
+                "Dados inválidos",
+                e.getMessage()
+            );
         } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR,
+            mostrarAlerta(
+                    Alert.AlertType.ERROR,
                     "Erro ao registrar empréstimo",
-                    e.getMessage());
+                    e.getMessage()
+            );
         }
     }
 
@@ -191,28 +273,59 @@ public class EmprestimoController {
         }
 
         try {
-            emprestimoDAO.devolver(selecionado.getId());
+
+            int livroId = selecionado.getLivroId();
+
+            emprestimoService.devolver(selecionado.getId());
 
             carregarDados();
+
+            notificarEstoqueAlterado(livroId);
 
             mostrarAlerta(Alert.AlertType.INFORMATION,
                     "Sucesso",
                     "Devolução registrada com sucesso!");
 
+        } catch (IllegalArgumentException e) {
+        mostrarAlerta(
+                Alert.AlertType.WARNING,
+                "Dados inválidos",
+                e.getMessage()
+        );
+
         } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR,
+            mostrarAlerta(
+                    Alert.AlertType.ERROR,
                     "Erro ao registrar devolução",
-                    e.getMessage());
+                    e.getMessage()
+            );
         }
     }
 
-    private void mostrarAlerta(
-            Alert.AlertType tipo, String titulo, String mensagem) {
-        Alert alerta = new Alert(tipo);
-        alerta.setTitle(titulo);
-        alerta.setHeaderText(null);
-        alerta.setContentText(mensagem);
-        alerta.showAndWait();
+    private void mostrarAlerta(Alert.AlertType tipo, String titulo, String mensagem) {
+
+        AlertaFactory fabrica;
+
+        switch (tipo) {
+            case INFORMATION:
+                fabrica = new AlertaSucessoFactory();
+                break;
+
+            case ERROR:
+                fabrica = new AlertaErroFactory();
+                break;
+
+            case WARNING:
+                fabrica = new AlertaAvisoFactory();
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        "Tipo de alerta não suportado."
+                );
+        }
+
+        fabrica.exibir(titulo, mensagem);
     }
 
     @FXML
@@ -242,6 +355,19 @@ public class EmprestimoController {
             alerta.setHeaderText("Não foi possível voltar ao menu.");
             alerta.setContentText(e.getMessage());
             alerta.showAndWait();
+        }
+    }
+
+    private void notificarEstoqueAlterado(int livroId) {
+
+        Livro livroAtualizado = comboLivro.getItems()
+                .stream()
+                .filter(livro -> livro.getId() == livroId)
+                .findFirst()
+                .orElse(null);
+
+        if (livroAtualizado != null) {
+            estoqueNotificador.notificar(livroAtualizado);
         }
     }
 }
