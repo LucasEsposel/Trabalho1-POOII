@@ -42,6 +42,11 @@
             <Insets />
          </VBox.margin>
       </ComboBox>
+      <ComboBox fx:id="comboPrazo" prefWidth="150.0" promptText="Selecione o Prazo">
+         <VBox.margin>
+            <Insets top="10.0" />
+         </VBox.margin>
+      </ComboBox>
       <HBox prefHeight="62.0" prefWidth="600.0">
          <VBox.margin>
             <Insets top="20.0" />

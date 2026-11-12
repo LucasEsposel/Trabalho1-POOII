@@ -1,6 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.dao.LivroDAO;
+import com.example.trabalho1pooii.service.LivroService;
 import com.example.trabalho1pooii.model.Livro;
 
 import javafx.collections.FXCollections;
@@ -53,7 +53,7 @@ public class LivroController {
     @FXML
     private TableView<Livro> tabelaLivros;
 
-    private final LivroDAO livroDAO = new LivroDAO();
+    private final LivroService livroService = new LivroService();
 
     private final ObservableList<Livro> livros =
             FXCollections.observableArrayList();
@@ -104,7 +104,7 @@ public class LivroController {
 
     private void carregarLivros() {
         try {
-            livros.setAll(livroDAO.listar());
+            livros.setAll(livroService.listar());
         } catch (SQLException e) {
             mostrarAlerta("Erro",
                     "Não foi possível carregar os livros: "
@@ -116,7 +116,7 @@ public class LivroController {
     private void cadastrar() {
         try {
             Livro livro = lerFormulario();
-            livroDAO.inserir(livro);
+            livroService.cadastrar(livro);
 
             carregarLivros();
             limparCampos();
@@ -144,13 +144,16 @@ public class LivroController {
         try {
             Livro dados = lerFormulario();
 
-            selecionado.setTitulo(dados.getTitulo());
-            selecionado.setAutor(dados.getAutor());
-            selecionado.setAno(dados.getAno());
-            selecionado.setGenero(dados.getGenero());
-            selecionado.setQuantidade(dados.getQuantidade());
+            Livro livro = new Livro(
+                    selecionado.getId(),
+                    dados.getTitulo(),
+                    dados.getAutor(),
+                    dados.getAno(),
+                    dados.getGenero(),
+                    dados.getQuantidade()
+            );
 
-            livroDAO.atualizar(selecionado);
+            livroService.atualizar(livro);
 
             carregarLivros();
             limparCampos();
@@ -176,16 +179,25 @@ public class LivroController {
         }
 
         try {
-            livroDAO.excluir(selecionado.getId());
+            livroService.excluir(selecionado.getId());
 
             carregarLivros();
             limparCampos();
 
             mostrarAlerta("Sucesso",
                     "Livro excluído com sucesso!");
-        } catch (SQLException e) {
-            mostrarAlerta("Erro ao excluir", e.getMessage());
-        }
+        } catch (IllegalArgumentException e) {
+        mostrarAlerta(
+                "Exclusão não permitida",
+                e.getMessage()
+        );
+
+    } catch (SQLException e) {
+        mostrarAlerta(
+                "Erro ao excluir livro",
+                e.getMessage()
+        );
+    }
     }
 
     @FXML
@@ -195,39 +207,25 @@ public class LivroController {
     }
 
     private Livro lerFormulario() {
+
         String titulo = txtTitulo.getText().trim();
         String autor = txtAutor.getText().trim();
         String genero = txtGenero.getText().trim();
 
-        if (titulo.isEmpty() || autor.isEmpty()
-                || genero.isEmpty()
-                || txtAno.getText().trim().isEmpty()
-                || txtQuantidade.getText().trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Preencha todos os campos.");
-        }
-
         try {
             int ano = Integer.parseInt(txtAno.getText().trim());
             int quantidade = Integer.parseInt(
-                    txtQuantidade.getText().trim());
-
-            if (ano <= 0) {
-                throw new IllegalArgumentException(
-                        "O ano deve ser maior que zero.");
-            }
-
-            if (quantidade < 0) {
-                throw new IllegalArgumentException(
-                        "A quantidade não pode ser negativa.");
-            }
+                    txtQuantidade.getText().trim()
+            );
 
             return new Livro(
-                    titulo, autor, ano, genero, quantidade);
+                    titulo, autor, ano, genero, quantidade
+            );
 
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Ano e quantidade devem ser números inteiros.");
+                    "Ano e quantidade devem ser números inteiros."
+            );
         }
     }
 
