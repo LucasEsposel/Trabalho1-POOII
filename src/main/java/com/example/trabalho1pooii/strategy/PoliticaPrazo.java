@@ -1,4 +1,4 @@
-package com.example.trabalho1pooii.service.strategy;
+package com.example.trabalho1pooii.strategy;
 
 import java.time.LocalDate;
 

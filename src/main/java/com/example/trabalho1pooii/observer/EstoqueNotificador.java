@@ -20,7 +20,7 @@ public class EstoqueNotificador {
     public void notificar(Livro livro) {
 
         for (EstoqueObserver observador : observadores) {
-            observador.estoqueAlterado(livro);
+                observador.estoqueAlterado(livro);
         }
     }
 }

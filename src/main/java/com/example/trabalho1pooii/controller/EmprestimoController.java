@@ -1,6 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.service.EmprestimoService;
+import com.example.trabalho1pooii.EmprestimoService;
 import com.example.trabalho1pooii.model.Emprestimo;
 import com.example.trabalho1pooii.model.Livro;
 import com.example.trabalho1pooii.model.Usuario;
@@ -15,9 +15,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.StringConverter;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import com.example.trabalho1pooii.service.strategy.PoliticaPrazo;
-import com.example.trabalho1pooii.service.strategy.PrazoPadrao;
-import com.example.trabalho1pooii.service.strategy.PrazoEstendido;
+import com.example.trabalho1pooii.strategy.PoliticaPrazo;
+import com.example.trabalho1pooii.strategy.PrazoPadrao;
+import com.example.trabalho1pooii.strategy.PrazoEstendido;
 import com.example.trabalho1pooii.factory.AlertaFactory;
 import com.example.trabalho1pooii.factory.AlertaSucessoFactory;
 import com.example.trabalho1pooii.factory.AlertaErroFactory;

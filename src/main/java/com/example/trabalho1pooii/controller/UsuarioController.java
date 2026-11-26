@@ -1,6 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.service.UsuarioService;
+import com.example.trabalho1pooii.UsuarioService;
 import com.example.trabalho1pooii.model.Usuario;
 
 import javafx.collections.FXCollections;

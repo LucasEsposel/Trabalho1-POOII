@@ -1,4 +1,4 @@
-package com.example.trabalho1pooii.service;
+package com.example.trabalho1pooii;
 
 import com.example.trabalho1pooii.dao.LivroDAO;
 import com.example.trabalho1pooii.model.Livro;
@@ -12,18 +12,15 @@ public class LivroService {
     private final LivroDAO livroDAO = new LivroDAO();
     private final EmprestimoDAO emprestimoDAO = new EmprestimoDAO();
 
-    // CREATE
     public void cadastrar(Livro livro) throws SQLException {
         validarLivro(livro);
         livroDAO.inserir(livro);
     }
 
-    // READ
     public List<Livro> listar() throws SQLException {
         return livroDAO.listar();
     }
 
-    // UPDATE
     public void atualizar(Livro livro) throws SQLException {
         if (livro.getId() <= 0) {
             throw new IllegalArgumentException(

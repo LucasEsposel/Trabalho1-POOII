@@ -1,4 +1,4 @@
-package com.example.trabalho1pooii.service;
+package com.example.trabalho1pooii;
 
 import com.example.trabalho1pooii.dao.EmprestimoDAO;
 import com.example.trabalho1pooii.dao.LivroDAO;
@@ -6,7 +6,7 @@ import com.example.trabalho1pooii.dao.UsuarioDAO;
 import com.example.trabalho1pooii.model.Emprestimo;
 import com.example.trabalho1pooii.model.Livro;
 import com.example.trabalho1pooii.model.Usuario;
-import com.example.trabalho1pooii.service.strategy.PoliticaPrazo;
+import com.example.trabalho1pooii.strategy.PoliticaPrazo;
 import java.time.LocalDate;
 
 import java.sql.SQLException;

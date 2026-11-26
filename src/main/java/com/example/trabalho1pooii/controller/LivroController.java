@@ -1,6 +1,6 @@
 package com.example.trabalho1pooii.controller;
 
-import com.example.trabalho1pooii.service.LivroService;
+import com.example.trabalho1pooii.LivroService;
 import com.example.trabalho1pooii.model.Livro;
 
 import javafx.collections.FXCollections;

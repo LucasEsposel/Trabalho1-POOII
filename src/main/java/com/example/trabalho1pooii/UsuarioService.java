@@ -1,4 +1,4 @@
-package com.example.trabalho1pooii.service;
+package com.example.trabalho1pooii;
 
 import com.example.trabalho1pooii.dao.UsuarioDAO;
 import com.example.trabalho1pooii.model.Usuario;
@@ -10,18 +10,15 @@ public class UsuarioService {
 
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
 
-    // CREATE
     public void cadastrar(Usuario usuario) throws SQLException {
         validarUsuario(usuario);
         usuarioDAO.inserir(usuario);
     }
 
-    // READ
     public List<Usuario> listar() throws SQLException {
         return usuarioDAO.listar();
     }
 
-    // UPDATE
     public void atualizar(Usuario usuario) throws SQLException {
         if (usuario.getId() <= 0) {
             throw new IllegalArgumentException(
@@ -33,7 +30,7 @@ public class UsuarioService {
         usuarioDAO.atualizar(usuario);
     }
 
-    // DELETE
+
     public void excluir(int id) throws SQLException {
         if (id <= 0) {
             throw new IllegalArgumentException(
